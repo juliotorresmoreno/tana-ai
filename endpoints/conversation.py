@@ -76,3 +76,38 @@ async def generate(collection_name: str):
             events.publish(user_id=payload.user_id, event=event)
     
     return generator.generate(messages=messages, resolve_fn=resolve_fn)
+
+class AttachPayload(BaseModel):
+    title: Annotated[str, lambda v: len(v.strip()) > 0]
+    attachment: Annotated[str, lambda v: len(v.strip()) > 0]
+    user_id: Annotated[int, lambda v: len(v.strip()) > 0]
+    connection_id: Annotated[int, lambda v: len(v.strip()) > 0]
+
+def validate_attach_payload(payload) -> AttachPayload:
+    try:
+        return AttachPayload(**payload)
+    except ValidationError as e:
+        print(f"Error validating payload: {e}")
+        return None
+
+@router.post("/<string:collection_name>/attach")
+async def attach(collection_name: str):
+    payload = validate_attach_payload(payload=request.json)
+    if payload == None:
+        return Response(
+            json.dumps({ "message": "Bad request!" }), 
+            content_type="application/json",
+            status=400
+        )
+    
+    title_message = conversation.add_title(collection_name, payload.title)
+    if title_message:
+        event = {**title_message, "connection_id": payload.connection_id}
+        events.publish(user_id=payload.user_id, event=event)
+        
+    system_message = conversation.add_system_message(collection_name, payload.attachment, datetime.utcnow())
+    if system_message:
+        event = {**system_message, "connection_id": payload.connection_id}
+        events.publish(user_id=payload.user_id, event=event)
+        
+    return Response("", status=204)
