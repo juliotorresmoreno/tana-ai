@@ -4,7 +4,7 @@ from langchain_community.chat_models import ChatOllama
 from typing import Literal, TypedDict, List, Union
 from langchain.schema import HumanMessage, SystemMessage, AIMessage
 from db.database import get_database
-from datetime import datetime, timezone
+from datetime import datetime
 
 CHROMA_HOST = config('CHROMA_HOST')
 CHROMA_PORT = config('CHROMA_PORT')
